@@ -31,7 +31,19 @@ export async function GET(
     return Response.json({ error: "Table not found" }, { status: 404 });
   }
 
-  return Response.json({ success: true, data: table });
+  const parsed = {
+    ...table,
+    columns: table.columns.map((col) => ({
+      ...col,
+      config: JSON.parse(col.config as string),
+    })),
+    rows: table.rows.map((row) => ({
+      ...row,
+      data: JSON.parse(row.data as string),
+    })),
+  };
+
+  return Response.json({ success: true, data: parsed });
 }
 
 export async function PATCH(

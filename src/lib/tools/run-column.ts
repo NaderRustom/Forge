@@ -34,19 +34,19 @@ export async function executeColumnRun(
     data: {
       type: "column_run",
       status: "running",
-      config: { columnKey, tableId } as object,
+      config: JSON.stringify({ columnKey, tableId }),
       totalRows: rows.length,
       tableId,
     },
   });
 
-  const columnConfig = column.config as Record<string, unknown>;
+  const columnConfig = JSON.parse(column.config as string) as Record<string, unknown>;
   let processed = 0;
   let errors = 0;
 
   for (const row of rows) {
     try {
-      const rowData = row.data as Record<string, unknown>;
+      const rowData = JSON.parse(row.data as string) as Record<string, unknown>;
       let result: string;
 
       switch (column.type) {
@@ -71,21 +71,21 @@ export async function executeColumnRun(
       await prisma.row.update({
         where: { id: row.id },
         data: {
-          data: { ...rowData, [columnKey]: result } as object,
+          data: JSON.stringify({ ...rowData, [columnKey]: result }),
         },
       });
 
       processed++;
     } catch (err) {
       errors++;
-      const rowData = row.data as Record<string, unknown>;
+      const rowData = JSON.parse(row.data as string) as Record<string, unknown>;
       await prisma.row.update({
         where: { id: row.id },
         data: {
-          data: {
+          data: JSON.stringify({
             ...rowData,
             [`${columnKey}_error`]: err instanceof Error ? err.message : "Failed",
-          } as object,
+          }),
         },
       });
     }
@@ -107,7 +107,7 @@ export async function executeColumnRun(
       status: errors === rows.length ? "fail" : "success",
       doneRows: processed + errors,
       progress: 100,
-      result: { processed, errors } as object,
+      result: JSON.stringify({ processed, errors }),
     },
   });
 

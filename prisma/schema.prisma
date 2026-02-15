@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -32,12 +32,12 @@ model Account {
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -71,9 +71,9 @@ model Workspace {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  members    WorkspaceMember[]
-  projects   Project[]
-  auditLogs  AuditLog[]
+  members     WorkspaceMember[]
+  projects    Project[]
+  auditLogs   AuditLog[]
   credentials ProviderCredential[]
 }
 
@@ -118,15 +118,15 @@ model Table {
 }
 
 model Column {
-  id             String   @id @default(cuid())
-  key            String
-  name           String
-  type           String   @default("TEXT") // TEXT, AI_PROMPT, TEMPLATE, LOOKUP_DOMAIN, WEB_SUMMARY
-  config         Json     @default("{}") // promptTemplate, model, outputSchema, etc.
-  position       Int      @default(0)
-  tableId        String
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id        String   @id @default(cuid())
+  key       String
+  name      String
+  type      String   @default("TEXT") // TEXT, AI_PROMPT, TEMPLATE, LOOKUP_DOMAIN, WEB_SUMMARY
+  config    String   @default("{}") // JSON string: promptTemplate, model, outputSchema, etc.
+  position  Int      @default(0)
+  tableId   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   table Table @relation(fields: [tableId], references: [id], onDelete: Cascade)
 
@@ -135,7 +135,7 @@ model Column {
 
 model Row {
   id        String   @id @default(cuid())
-  data      Json     @default("{}") // { [columnKey]: value }
+  data      String   @default("{}") // JSON string: { [columnKey]: value }
   position  Int      @default(0)
   tableId   String
   createdAt DateTime @default(now())
@@ -158,15 +158,15 @@ model ChatThread {
 }
 
 model Message {
-  id           String   @id @default(cuid())
-  role         String   // user, assistant, system, tool
-  content      String   @db.Text
-  toolName     String?
-  toolInput    Json?
-  toolResult   Json?
-  threadId     String
-  userId       String?
-  createdAt    DateTime @default(now())
+  id         String   @id @default(cuid())
+  role       String   // user, assistant, system, tool
+  content    String
+  toolName   String?
+  toolInput  String?  // JSON string
+  toolResult String?  // JSON string
+  threadId   String
+  userId     String?
+  createdAt  DateTime @default(now())
 
   thread ChatThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
   user   User?      @relation(fields: [userId], references: [id])
@@ -178,7 +178,7 @@ model Workflow {
   id          String   @id @default(cuid())
   name        String
   description String?
-  steps       Json     @default("[]") // Array of step definitions
+  steps       String   @default("[]") // JSON string: Array of step definitions
   projectId   String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -191,9 +191,9 @@ model Run {
   id         String   @id @default(cuid())
   status     String   @default("queued") // queued, running, success, fail
   type       String   // column_run, workflow_run
-  config     Json     @default("{}") // run parameters
-  result     Json?    // summary of results
-  error      String?  @db.Text
+  config     String   @default("{}") // JSON string: run parameters
+  result     String?  // JSON string: summary of results
+  error      String?
   progress   Int      @default(0) // 0-100
   totalRows  Int      @default(0)
   doneRows   Int      @default(0)
@@ -211,7 +211,7 @@ model Run {
 model ProviderCredential {
   id          String   @id @default(cuid())
   provider    String   // anthropic, openai, etc.
-  credentials Json     // encrypted credentials
+  credentials String   // JSON string: encrypted credentials
   workspaceId String
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -228,7 +228,7 @@ model AuditLog {
   action      String
   entity      String
   entityId    String?
-  metadata    Json?
+  metadata    String?  // JSON string
   userId      String?
   workspaceId String
   createdAt   DateTime @default(now())

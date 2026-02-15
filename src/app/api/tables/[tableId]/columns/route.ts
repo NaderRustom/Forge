@@ -39,7 +39,7 @@ export async function POST(
       key: parsed.data.key,
       name: parsed.data.name,
       type: parsed.data.type,
-      config: (parsed.data.config || {}) as object,
+      config: JSON.stringify(parsed.data.config || {}),
       position: table.columns.length,
       tableId,
     },

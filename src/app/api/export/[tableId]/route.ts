@@ -33,7 +33,7 @@ export async function GET(
 
   if (format === "json") {
     const data = table.rows.map((row) => {
-      const rowData = row.data as Record<string, unknown>;
+      const rowData = JSON.parse(row.data as string) as Record<string, unknown>;
       const obj: Record<string, unknown> = {};
       for (const col of table.columns) {
         obj[col.name] = rowData[col.key] ?? "";
@@ -52,7 +52,7 @@ export async function GET(
   // CSV export
   const header = table.columns.map((c) => c.name).join(",");
   const csvRows = table.rows.map((row) => {
-    const rowData = row.data as Record<string, unknown>;
+    const rowData = JSON.parse(row.data as string) as Record<string, unknown>;
     return table.columns
       .map((col) => {
         const val = String(rowData[col.key] ?? "");

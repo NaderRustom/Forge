@@ -50,7 +50,7 @@ async function createTable(
           key: col.key,
           name: col.name,
           type: col.type || "TEXT",
-          config: (col.config || {}) as object,
+          config: JSON.stringify(col.config || {}),
           position: i,
         })),
       },
@@ -89,7 +89,7 @@ async function importRows(
   const created = await prisma.row.createMany({
     data: rows.map((data, i) => ({
       tableId,
-      data: data as object,
+      data: JSON.stringify(data),
       position: existingCount + i,
     })),
   });
@@ -125,7 +125,7 @@ async function addColumn(
       key,
       name,
       type,
-      config: (config || {}) as object,
+      config: JSON.stringify(config || {}),
       position: table.columns.length,
       tableId,
     },
@@ -167,7 +167,7 @@ async function runWorkflow(
     await prisma.workflow.create({
       data: {
         name: workflowName,
-        steps: steps as object[],
+        steps: JSON.stringify(steps),
         projectId: context.projectId,
       },
     });
@@ -219,7 +219,7 @@ async function exportTable(
 
   if (format === "json") {
     const data = rows.map((row) => {
-      const rowData = row.data as Record<string, unknown>;
+      const rowData = JSON.parse(row.data as string) as Record<string, unknown>;
       const obj: Record<string, unknown> = {};
       for (const col of columns) {
         obj[col.name] = rowData[col.key] ?? "";
@@ -232,7 +232,7 @@ async function exportTable(
   // CSV format
   const header = columns.map((c) => c.name).join(",");
   const csvRows = rows.map((row) => {
-    const rowData = row.data as Record<string, unknown>;
+    const rowData = JSON.parse(row.data as string) as Record<string, unknown>;
     return columns
       .map((col) => {
         const val = String(rowData[col.key] ?? "");
@@ -270,7 +270,7 @@ async function summarizeTable(
 
   const { anthropic } = await import("@/lib/ai/client");
 
-  const tableData = table.rows.map((row) => row.data);
+  const tableData = table.rows.map((row) => JSON.parse(row.data as string));
   const columnNames = table.columns.map((c) => `${c.name} (${c.key})`).join(", ");
 
   const response = await anthropic.messages.create({
@@ -309,7 +309,7 @@ async function logAudit(
       action,
       entity,
       entityId,
-      metadata: (metadata || {}) as object,
+      metadata: JSON.stringify(metadata || {}),
       userId: context.userId,
       workspaceId: context.workspaceId,
     },

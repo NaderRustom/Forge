@@ -40,9 +40,14 @@ export async function GET(
     prisma.row.count({ where: { tableId } }),
   ]);
 
+  const parsedRows = rows.map((row) => ({
+    ...row,
+    data: JSON.parse(row.data as string),
+  }));
+
   return Response.json({
     success: true,
-    data: rows,
+    data: parsedRows,
     pagination: { page, limit, total, pages: Math.ceil(total / limit) },
   });
 }
@@ -76,12 +81,12 @@ export async function POST(
   const row = await prisma.row.create({
     data: {
       tableId,
-      data: (body.data || {}) as object,
+      data: JSON.stringify(body.data || {}),
       position: count,
     },
   });
 
-  return Response.json({ success: true, data: row }, { status: 201 });
+  return Response.json({ success: true, data: { ...row, data: JSON.parse(row.data as string) } }, { status: 201 });
 }
 
 export async function PUT(
@@ -118,14 +123,15 @@ export async function PUT(
     return Response.json({ error: "Row not found" }, { status: 404 });
   }
 
+  const existingData = JSON.parse(row.data as string) as Record<string, unknown>;
   const updated = await prisma.row.update({
     where: { id: rowId },
     data: {
-      data: { ...(row.data as Record<string, unknown>), ...data } as object,
+      data: JSON.stringify({ ...existingData, ...data }),
     },
   });
 
-  return Response.json({ success: true, data: updated });
+  return Response.json({ success: true, data: { ...updated, data: JSON.parse(updated.data as string) } });
 }
 
 export async function DELETE(
